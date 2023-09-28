@@ -4,10 +4,12 @@ import { listAll, getDownloadURL, ref } from "firebase/storage";
 import Preview from "../layout/Preview";
 import "../ItrForm.css";
 import Common from "../layout/Common";
+import { useNavigate } from "react-router-dom";
 function ItrForm(props) {
   const firebase = useFirebase();
   const [imageUpload, setImageUpload] = useState([]);
   const [Error, setError] = useState(null);
+  const navigate = useNavigate();
   const [isUpload, setIsUpload] = useState(false);
   const [CheckBox, setCheckbox] = useState({
     Salary: false,
@@ -24,10 +26,15 @@ function ItrForm(props) {
     password: "",
     linked: "",
     startingIncome: [],
-    status: "false",
-    message: "Pending",
-    service: props.heading
+    service: [
+      {
+        servicename: props.heading,
+        message: "Pending",
+        status: "false",
+      },
+    ],
   });
+
   const localData = (e) => {
     e.preventDefault();
     localStorage.setItem("formData", JSON.stringify(formData));
@@ -38,8 +45,8 @@ function ItrForm(props) {
     try {
       console.log("startttt");
       await imageUpload.forEach((element) => {
+        firebase.submitITR(formData, element, formData.service[0].servicename);
         console.log("working");
-        firebase.submitITR(formData, element,props.heading);
       });
       console.log("endd...");
       setIsUpload(true);
@@ -99,7 +106,6 @@ function ItrForm(props) {
     console.log(imageUpload);
   };
 
-  
   useEffect(() => {
     const form_data = localStorage.getItem("formData");
     const checking = localStorage.getItem("checkboxes");
@@ -111,9 +117,17 @@ function ItrForm(props) {
       console.log("prehello");
       firebase.getData().then((rs) => {
         if (rs.data()) {
-          // console.log(rs.data());
+          console.log(rs.data());
           setFormData(rs.data());
-          setFormData({...formData,service:props.heading})
+          const data = formData;
+          
+          const serviceArray = {
+            servicename: props.heading,
+            message: "Pending",
+            status: "false",
+          };
+          data.service.push(serviceArray);
+          setFormData(data);
         }
       });
     }
@@ -121,7 +135,6 @@ function ItrForm(props) {
       setCheckbox(JSON.parse(checking));
     }
   }, []);
-
 
   const loadingUI = <div className="spin"></div>;
   return (
@@ -156,23 +169,30 @@ function ItrForm(props) {
                   onChange={handleCheckbox}
                 />
                 <label htmlFor="">House Property</label>
-                {props.fieldArea.includes("CG")&&<><input
-                  type="checkbox"
-                  value="2"
-                  name="Capital"
-                  onChange={handleCheckbox}
-                />
-                <label htmlFor="">Capital Gains</label></> }
-                {props.fieldArea.includes("PGBP") && <><input
-                  type="checkbox"
-                  value="2"
-                  name="profession"
-                  onChange={handleCheckbox}
-                />
-                <label htmlFor="">
-                  Profits & Gain form Business or Profession
-                </label></>
-                }
+                {props.fieldArea.includes("CG") && (
+                  <>
+                    <input
+                      type="checkbox"
+                      value="2"
+                      name="Capital"
+                      onChange={handleCheckbox}
+                    />
+                    <label htmlFor="">Capital Gains</label>
+                  </>
+                )}
+                {props.fieldArea.includes("PGBP") && (
+                  <>
+                    <input
+                      type="checkbox"
+                      value="2"
+                      name="profession"
+                      onChange={handleCheckbox}
+                    />
+                    <label htmlFor="">
+                      Profits & Gain form Business or Profession
+                    </label>
+                  </>
+                )}
                 <input
                   type="checkbox"
                   value="3"
@@ -190,12 +210,12 @@ function ItrForm(props) {
                         Form 16
                       </label>
                       <input
-                        type="file" accept=".jpeg,.png,.jpg"
-                       
+                        type="file"
+                        accept=".jpeg,.png,.jpg"
                         name="Form 16"
                         onChange={(event) => {
-                        imageSet(event.target.name, event.target.files[0]);
-                      }}
+                          imageSet(event.target.name, event.target.files[0]);
+                        }}
                       />
                     </div>
                     <div className="first-box">
@@ -203,12 +223,12 @@ function ItrForm(props) {
                         Monthly Salary Slips (if not included in FORM-16)
                       </label>
                       <input
-                        type="file" accept=".jpeg,.png,.jpg"
-                       
+                        type="file"
+                        accept=".jpeg,.png,.jpg"
                         name="monthly-salary-slip"
                         onChange={(event) => {
-                        imageSet(event.target.name, event.target.files[0]);
-                      }}
+                          imageSet(event.target.name, event.target.files[0]);
+                        }}
                       />
                     </div>
                     <div className="first-box">
@@ -216,12 +236,12 @@ function ItrForm(props) {
                         Salary Slips if not included in form 16
                       </label>
                       <input
-                        type="file" accept=".jpeg,.png,.jpg"
-                        
+                        type="file"
+                        accept=".jpeg,.png,.jpg"
                         name="salary-slip-not16"
                         onChange={(event) => {
-                        imageSet(event.target.name, event.target.files[0]);
-                      }}
+                          imageSet(event.target.name, event.target.files[0]);
+                        }}
                       />
                     </div>
                     <div className="first-box">
@@ -229,11 +249,12 @@ function ItrForm(props) {
                         Annual Information Statement
                       </label>
                       <input
-                        type="file" accept=".jpeg,.png,.jpg"
+                        type="file"
+                        accept=".jpeg,.png,.jpg"
                         name="Annual-Information"
                         onChange={(event) => {
-                        imageSet(event.target.name, event.target.files[0]);
-                      }}
+                          imageSet(event.target.name, event.target.files[0]);
+                        }}
                       />
                     </div>
                   </>
@@ -245,11 +266,12 @@ function ItrForm(props) {
                         Rent Agreement
                       </label>
                       <input
-                        type="file" accept=".jpeg,.png,.jpg"
+                        type="file"
+                        accept=".jpeg,.png,.jpg"
                         name="Rent-Agreement"
                         onChange={(event) => {
-                        imageSet(event.target.name, event.target.files[0]);
-                      }}
+                          imageSet(event.target.name, event.target.files[0]);
+                        }}
                       />
                     </div>
                     <div className="first-box">
@@ -257,11 +279,12 @@ function ItrForm(props) {
                         Loan Interest Certificate for Claiming Deductions
                       </label>
                       <input
-                        type="file" accept=".jpeg,.png,.jpg"
+                        type="file"
+                        accept=".jpeg,.png,.jpg"
                         name="interest-deduction"
                         onChange={(event) => {
-                        imageSet(event.target.name, event.target.files[0]);
-                      }}
+                          imageSet(event.target.name, event.target.files[0]);
+                        }}
                       />
                     </div>
                     <div className="first-box">
@@ -269,11 +292,12 @@ function ItrForm(props) {
                         Municipal Tax Receipt
                       </label>
                       <input
-                        type="file" accept=".jpeg,.png,.jpg"
+                        type="file"
+                        accept=".jpeg,.png,.jpg"
                         name="Municipal-Tax"
                         onChange={(event) => {
-                        imageSet(event.target.name, event.target.files[0]);
-                      }}
+                          imageSet(event.target.name, event.target.files[0]);
+                        }}
                       />
                     </div>
                     <div className="first-box">
@@ -281,11 +305,12 @@ function ItrForm(props) {
                         Sale Deed of new property
                       </label>
                       <input
-                        type="file" accept=".jpeg,.png,.jpg"
+                        type="file"
+                        accept=".jpeg,.png,.jpg"
                         name="sale-deed"
                         onChange={(event) => {
-                        imageSet(event.target.name, event.target.files[0]);
-                      }}
+                          imageSet(event.target.name, event.target.files[0]);
+                        }}
                       />
                     </div>
                   </>
@@ -298,11 +323,12 @@ function ItrForm(props) {
                         Proof of Dividend
                       </label>
                       <input
-                        type="file" accept=".jpeg,.png,.jpg"
+                        type="file"
+                        accept=".jpeg,.png,.jpg"
                         name="proof-dividend"
                         onChange={(event) => {
-                        imageSet(event.target.name, event.target.files[0]);
-                      }}
+                          imageSet(event.target.name, event.target.files[0]);
+                        }}
                       />
                     </div>
                     <div className="first-box">
@@ -310,11 +336,12 @@ function ItrForm(props) {
                         Fixed Deposit Interest Statement
                       </label>
                       <input
-                        type="file" accept=".jpeg,.png,.jpg"
+                        type="file"
+                        accept=".jpeg,.png,.jpg"
                         name="Fixed-Deposit-Interest"
                         onChange={(event) => {
-                        imageSet(event.target.name, event.target.files[0]);
-                      }}
+                          imageSet(event.target.name, event.target.files[0]);
+                        }}
                       />
                     </div>
                     <div className="first-box">
@@ -322,11 +349,12 @@ function ItrForm(props) {
                         Any other income from Interest
                       </label>
                       <input
-                        type="file" accept=".jpeg,.png,.jpg"
+                        type="file"
+                        accept=".jpeg,.png,.jpg"
                         name="other-income-interest"
                         onChange={(event) => {
-                        imageSet(event.target.name, event.target.files[0]);
-                      }}
+                          imageSet(event.target.name, event.target.files[0]);
+                        }}
                       />
                     </div>
                   </>
@@ -366,7 +394,8 @@ function ItrForm(props) {
                             Proof of Sale / Sale Deed
                           </label>
                           <input
-                            type="file" accept=".jpeg,.png,.jpg"
+                            type="file"
+                            accept=".jpeg,.png,.jpg"
                             name="proof-of-sale"
                             onChange={(event) => {
                               setImageUpload([
@@ -384,7 +413,8 @@ function ItrForm(props) {
                             Proof of Purchase
                           </label>
                           <input
-                            type="file" accept=".jpeg,.png,.jpg"
+                            type="file"
+                            accept=".jpeg,.png,.jpg"
                             name="Proof-of-Purchase"
                             onChange={(event) => {
                               setImageUpload([
@@ -402,7 +432,8 @@ function ItrForm(props) {
                             Proof of Exemptions (if any)
                           </label>
                           <input
-                            type="file" accept=".jpeg,.png,.jpg"
+                            type="file"
+                            accept=".jpeg,.png,.jpg"
                             name="Proof-of-Exemptions"
                             onChange={(event) => {
                               setImageUpload([
@@ -424,7 +455,8 @@ function ItrForm(props) {
                             Contract Note
                           </label>
                           <input
-                            type="file" accept=".jpeg,.png,.jpg"
+                            type="file"
+                            accept=".jpeg,.png,.jpg"
                             name="Contract-Note"
                             onChange={(event) => {
                               setImageUpload([
@@ -442,7 +474,8 @@ function ItrForm(props) {
                             Holding Certificate
                           </label>
                           <input
-                            type="file" accept=".jpeg,.png,.jpg"
+                            type="file"
+                            accept=".jpeg,.png,.jpg"
                             name="Holding-Certificate"
                             onChange={(event) => {
                               setImageUpload([
@@ -460,7 +493,8 @@ function ItrForm(props) {
                             P&L Statement and Ledger
                           </label>
                           <input
-                            type="file" accept=".jpeg,.png,.jpg"
+                            type="file"
+                            accept=".jpeg,.png,.jpg"
                             name="P&L-Statement"
                             onChange={(event) => {
                               setImageUpload([
@@ -483,7 +517,8 @@ function ItrForm(props) {
                             Proof of Dividend
                           </label>
                           <input
-                            type="file" accept=".jpeg,.png,.jpg"
+                            type="file"
+                            accept=".jpeg,.png,.jpg"
                             name="proof-dividend"
                             onChange={(event) => {
                               setImageUpload([
@@ -501,7 +536,8 @@ function ItrForm(props) {
                             Fixed Deposit Interest Statement
                           </label>
                           <input
-                            type="file" accept=".jpeg,.png,.jpg"
+                            type="file"
+                            accept=".jpeg,.png,.jpg"
                             name="Fixed-Deposit-Interest"
                             onChange={(event) => {
                               setImageUpload([
@@ -519,7 +555,8 @@ function ItrForm(props) {
                             Any other income from Interest
                           </label>
                           <input
-                            type="file" accept=".jpeg,.png,.jpg"
+                            type="file"
+                            accept=".jpeg,.png,.jpg"
                             name="other-income-interest"
                             onChange={(event) => {
                               setImageUpload([
@@ -569,7 +606,8 @@ function ItrForm(props) {
                       Income and Expense Statement
                     </label>
                     <input
-                      type="file" accept=".jpeg,.png,.jpg"
+                      type="file"
+                      accept=".jpeg,.png,.jpg"
                       name="income-expense-statement"
                       onChange={(event) => {
                         setImageUpload([
@@ -588,7 +626,8 @@ function ItrForm(props) {
                       Current Statements
                     </label>
                     <input
-                      type="file" accept=".jpeg,.png,.jpg"
+                      type="file"
+                      accept=".jpeg,.png,.jpg"
                       name="current-statement"
                       onChange={(event) => {
                         setImageUpload([
@@ -606,7 +645,8 @@ function ItrForm(props) {
                       Books of Accounts
                     </label>
                     <input
-                      type="file" accept=".jpeg,.png,.jpg"
+                      type="file"
+                      accept=".jpeg,.png,.jpg"
                       name="Book-Accounts"
                       onChange={(event) => {
                         setImageUpload([
@@ -645,7 +685,7 @@ function ItrForm(props) {
             </div>
 
             <div className="preview button">
-              <Preview heading={props.heading}/>
+              <Preview heading={props.heading} />
             </div>
           </form>
         </div>
