@@ -5,6 +5,8 @@ import Preview from "../layout/Preview";
 import "../ItrForm.css";
 import Common from "../layout/Common";
 import { useNavigate } from "react-router-dom";
+import Modal from "../Modal/Modal";
+
 function ItrForm(props) {
   const firebase = useFirebase();
   const [imageUpload, setImageUpload] = useState([]);
@@ -26,13 +28,6 @@ function ItrForm(props) {
     password: "",
     linked: "",
     startingIncome: [],
-    service: [
-      {
-        servicename: props.heading,
-        message: "Pending",
-        status: "false",
-      },
-    ],
   });
 
   const localData = (e) => {
@@ -45,7 +40,7 @@ function ItrForm(props) {
     try {
       console.log("startttt");
       await imageUpload.forEach((element) => {
-        firebase.submitITR(formData, element, formData.service[0].servicename);
+        firebase.submitITR(formData, element, [props.heading]);
         console.log("working");
       });
       console.log("endd...");
@@ -70,15 +65,7 @@ function ItrForm(props) {
     }));
     console.log(formData);
   };
-  const handleInputChange = (event) => {
-    const { name, value } = event.target;
 
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-    console.log(formData);
-  };
   const handleCheckbox = (event) => {
     const { name, checked, value } = event.target;
 
@@ -95,6 +82,7 @@ function ItrForm(props) {
 
     setCheckbox({ ...CheckBox, [name]: checked });
   };
+
   const imageSet = (name, file) => {
     setImageUpload([
       ...imageUpload,
@@ -105,7 +93,23 @@ function ItrForm(props) {
     ]);
     console.log(imageUpload);
   };
-
+  const fetchData = async () => {
+    // firebase.getData()
+    console.log("prehello");
+    await firebase.getData().then((rs) => {
+      if (rs) {
+        setFormData(rs);
+        const value = formData[props.heading];
+        if (!value)
+          handleCommon(props.heading, {
+            message: "Pending",
+            status: "false",
+          });
+      } else {
+        handleCommon(props.heading, { message: "Pending", status: "false" });
+      }
+    });
+  };
   useEffect(() => {
     const form_data = localStorage.getItem("formData");
     const checking = localStorage.getItem("checkboxes");
@@ -113,23 +117,7 @@ function ItrForm(props) {
     if (form_data) {
       setFormData(JSON.parse(form_data));
     } else {
-      // firebase.getData()
-      console.log("prehello");
-      firebase.getData().then((rs) => {
-        if (rs.data()) {
-          console.log(rs.data());
-          setFormData(rs.data());
-          const data = formData;
-          
-          const serviceArray = {
-            servicename: props.heading,
-            message: "Pending",
-            status: "false",
-          };
-          data.service.push(serviceArray);
-          setFormData(data);
-        }
-      });
+      fetchData();
     }
     if (checking) {
       setCheckbox(JSON.parse(checking));
@@ -686,6 +674,7 @@ function ItrForm(props) {
 
             <div className="preview button">
               <Preview heading={props.heading} />
+              <Modal service = {props.heading} />
             </div>
           </form>
         </div>

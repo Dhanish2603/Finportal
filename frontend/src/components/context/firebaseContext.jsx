@@ -79,7 +79,7 @@ const googleprovider = new GoogleAuthProvider();
 export const FirebaseApp = (props) => {
   const [isloading, setIsLoading] = useState(true);
   const [isUser, setIsUser] = useState("Loading");
-  const [isNewUser, setIsNewUser] = useState("Loading");
+  const [isNewUser, setIsNewUser] = useState(" ");
   const isLoggedIn = isUser ? true : false;
   const [itrfile, setItrfile] = useState(null);
 
@@ -88,26 +88,13 @@ export const FirebaseApp = (props) => {
       if (userFound) {
         const uid = userFound.uid;
         // console.log(uid)
-        return setIsUser(uid);
+        setIsUser(uid);
       } else {
         setIsUser(false);
       }
     });
-  }, []);
-
-  // useEffect(()=>{
-  //   getDownloadURL(ref(storage, 'Resume.pdf')).then((url)=>{
-  //     setResume(url);
-  //   })
-  // },[])
-
-  useEffect(() => {
-    setTimeout(() => {
-      setIsLoading(false);
-      // On error
-      // setError('Error fetching data');
-      // setIsLoading(false);
-    }, 500);
+    console.log(isUser);
+    setIsLoading(false);
   }, []);
 
   // registeration of user..
@@ -140,27 +127,22 @@ export const FirebaseApp = (props) => {
     setDoc(doc(firestore, "users", isUser, "payment", "status"), {
       Payment: "success",
       orderInfo,
-      // imageUrl: resultBucket.ref.fullPath,
     }).then((res) => {
       console.log(res);
       return res;
     });
   };
   // updating ITR details in user uid`
-  const submitITR = async (userData, coverImage,servicename ) => {
+  const submitITR = async (userData, coverImage, servicename) => {
     const storeRef = ref(
       storage,
       `Documents/${isUser}/${servicename}/${coverImage.name}-${coverImage.file.name}`
     );
     const resultBucket = await uploadBytes(storeRef, coverImage.file);
 
-    return await setDoc(
-      doc(firestore, "users", isUser),
-      {
-        ...userData,
-        // imageUrl: resultBucket.ref.fullPath,
-      }
-    );
+    return await setDoc(doc(firestore, "users", isUser), {
+      ...userData, 
+    });
   };
   // list all details of user
   const listDocs = async () => {
@@ -170,19 +152,46 @@ export const FirebaseApp = (props) => {
 
   // fetch one user
   const getData = async () => {
-    console.log(isUser);
-    const rs = await getDoc(doc(firestore, `users/${isUser}`));
-    console.log(rs);
-    return rs;
+    try {
+      const user = await new Promise((resolve, reject) => {
+        const unsubscribe = onAuthStateChanged(auth, (userFound) => {
+          if (userFound) {
+            unsubscribe();
+            resolve(userFound);
+          } else {
+            reject("User not found");
+          }
+        });
+      });
+
+      const uid = user.uid;
+      const userDocRef = doc(firestore, `users/${uid}`);
+      const snapshot = await getDoc(userDocRef);
+
+      if (snapshot.exists()) {
+        const userData = snapshot.data();
+        console.log("Data:", userData);
+        return userData;
+      } else {
+        console.log("User not found in Firestore");
+        return null;
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      throw error;
+    }
   };
 
   // fetch ITRfile
 
-  const FetchPdf = async () => {
+  const FetchPdf = async (service) => {
     console.log("fetch pdf function run");
     const format = ".pdf";
     await getDownloadURL(
-      ref(storage, `Documents/${isUser}/Admin/ITRFILE-${isUser}${format}`)
+      ref(
+        storage,
+        `Documents/${isUser}/${service}/Admin/ITRFILE-${isUser}${format}`
+      )
     ).then((url) => {
       setItrfile(url);
       // return url;
